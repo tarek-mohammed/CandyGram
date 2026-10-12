@@ -4473,12 +4473,13 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             @Override
             public boolean showOptions(int page, View view) {
                 if (profileActivity == null) return false;
-                if (getTab(page, info instanceof TLRPC.TL_channelFull) == null) {
+                final TLRPC.Chat chat = info != null ? profileActivity.getMessagesController().getChat(info.id) : null;
+                final boolean isChannel = ChatObject.isChannelAndNotMegaGroup(chat);
+                if (getTab(page, isChannel) == null) {
                     return false;
                 }
                 final TLRPC.ProfileTab main_tab;
-                if (info instanceof TLRPC.TL_channelFull) {
-                    final TLRPC.Chat chat = profileActivity.getMessagesController().getChat(info.id);
+                if (isChannel) {
                     if (!ChatObject.canUserDoAction(chat, ChatObject.ACTION_POST))
                         return false;
                     main_tab = info.main_tab;
@@ -4495,7 +4496,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 o.add(R.drawable.tabs_reorder, getString(R.string.ProfileTabSetAsMain), () -> {
                     if (profileActivity == null) return;
                     final TLObject r;
-                    if (info instanceof TLRPC.TL_channelFull) {
+                    if (isChannel) {
                         TLRPC.TL_channels_setMainProfileTab req = new TLRPC.TL_channels_setMainProfileTab();
                         req.tab = getTab(page, true);
                         req.channel = profileActivity.getMessagesController().getInputChannel(info.id);
@@ -7046,7 +7047,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                     return false;
                 };
-                final boolean isChannel = info instanceof TLRPC.TL_channelFull;
+                final TLRPC.Chat chat = info != null && profileActivity != null ? profileActivity.getMessagesController().getChat(info.id) : null;
+                final boolean isChannel = ChatObject.isChannelAndNotMegaGroup(chat);
                 for (int i = 0; i < 15; ++i) {
                     if (getTab(i, isChannel) != null && !has.run(i)) {
                         tabs.add(new Pair<>(i, getTabName(i)));
@@ -12583,9 +12585,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     public void sendTabsOrder() {
         if (profileActivity == null || scrollSlidingTextTabStrip == null) return;
 
+        final TLRPC.Chat chat = info != null ? profileActivity.getMessagesController().getChat(info.id) : null;
+        final boolean isChannel = ChatObject.isChannelAndNotMegaGroup(chat);
         final ArrayList<TLRPC.ProfileTab> order = new ArrayList<>();
         for (int id : scrollSlidingTextTabStrip.getTabIds()) {
-            final TLRPC.ProfileTab tab = getTab(id, info instanceof TLRPC.TL_channelFull);
+            final TLRPC.ProfileTab tab = getTab(id, isChannel);
             if (tab != null) {
                 order.add(tab);
             }
